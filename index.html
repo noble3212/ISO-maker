@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Offline Folder to ISO 🌐</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    #fileList { white-space: pre-wrap; background: #f4f4f4; padding: 10px; margin-top: 10px; }
+    button { margin-top: 10px; }
+  </style>
+  <script src="js/iso9660-writer.js"></script>
+</head>
+<body>
+  <h1>📂 Folder to ISO (Offline, Nested)</h1>
+  <input type="file" id="folderInput" webkitdirectory multiple />
+  <div id="fileList">No folder selected.</div>
+  <button onclick="createIso()">🛠️ Create ISO</button>
+
+  <script>
+    const folderInput = document.getElementById('folderInput');
+    const fileListDiv = document.getElementById('fileList');
+    let selectedFiles = [];
+
+    folderInput.addEventListener('change', e => {
+      selectedFiles = Array.from(e.target.files);
+      if (selectedFiles.length === 0) {
+        fileListDiv.textContent = 'No folder selected.';
+        return;
+      }
+      let disp = `Selected (${selectedFiles.length}):\n`;
+      selectedFiles.forEach(f => disp += f.webkitRelativePath + '\n');
+      fileListDiv.textContent = disp;
+    });
+
+    async function createIso() {
+      if (!selectedFiles.length) return alert("Select a folder first.");
+      const iso = new ISO9660Writer("MY_ISO");
+      for (const file of selectedFiles) {
+        const buf = await file.arrayBuffer();
+        iso.addFile(file.webkitRelativePath, new Uint8Array(buf));
+      }
+      const blob = iso.getBlob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "folder.iso";
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+  </script>
+</body>
+</html>
+
